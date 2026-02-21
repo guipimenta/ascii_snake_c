@@ -335,20 +335,29 @@ int main() {
     int key = read_key();
     switch (key) {
     case KEY_UP:
-      game_snake.head->vx = 0;
-      game_snake.head->vy = -1;
+      if (game_snake.head->vy != 1) {
+        game_snake.head->vx = 0;
+        game_snake.head->vy = -1;
+      }
       break;
     case KEY_DOWN:
-      game_snake.head->vx = 0;
-      game_snake.head->vy = 1;
+      if (game_snake.head->vy != -1) {
+        game_snake.head->vx = 0;
+        game_snake.head->vy = 1;
+      }
       break;
     case KEY_LEFT:
-      game_snake.head->vx = -1;
-      game_snake.head->vy = 0;
+      if (game_snake.head->vx != 1) {
+        game_snake.head->vx = -1;
+        game_snake.head->vy = 0;
+      }
       break;
     case KEY_RIGHT:
-      game_snake.head->vx = 1;
-      game_snake.head->vy = 0;
+      if (game_snake.head->vx != -1) {
+
+        game_snake.head->vx = 1;
+        game_snake.head->vy = 0;
+      }
       break;
     case 'q':
       free_buffer(buffer);
