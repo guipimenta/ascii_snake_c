@@ -354,7 +354,6 @@ int main() {
       break;
     case KEY_RIGHT:
       if (game_snake.head->vx != -1) {
-
         game_snake.head->vx = 1;
         game_snake.head->vy = 0;
       }
