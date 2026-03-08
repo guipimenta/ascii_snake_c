@@ -1,65 +1,11 @@
-#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <termios.h>
-#include <unistd.h>
-
-struct termios orig_termios;
-
-void disable_raw_mode() { tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios); }
-
-void enable_raw_mode() {
-  tcgetattr(STDIN_FILENO, &orig_termios);
-  atexit(disable_raw_mode);
-
-  struct termios raw = orig_termios;
-  raw.c_lflag &= ~(ECHO | ICANON);
-  tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
-
-  int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
-  fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
-}
-
-#define KEY_UP 1000
-#define KEY_DOWN 1001
-#define KEY_RIGHT 1002
-#define KEY_LEFT 1003
-
-int read_key() {
-  char c = 0;
-  if (read(STDIN_FILENO, &c, 1) == 0)
-    return 0;
-  if (c == '\033') {
-    char seq[2];
-    if (read(STDIN_FILENO, &seq[0], 1) == 0)
-      return '\033';
-    if (read(STDIN_FILENO, &seq[1], 1) == 0)
-      return '\033';
-    if (seq[0] == '[') {
-      if (seq[1] == 'A')
-        return KEY_UP;
-      if (seq[1] == 'B')
-        return KEY_DOWN;
-      if (seq[1] == 'C')
-        return KEY_RIGHT;
-      if (seq[1] == 'D')
-        return KEY_LEFT;
-    }
-    return '\033';
-  }
-  return c;
-}
-
+#define ASCII_LIB_KEY_HANDLER
+#include "ascii_lib.h"
 int rand_number(int min, int max) { return (rand() % max) + min; }
 
 long FRAMES = 0;
 int score = 0;
-
-typedef struct screen_buffer {
-  int width;
-  int height;
-  char **buffer;
-} screen_buffer;
 
 typedef struct snake_body_part {
   int x;
@@ -86,13 +32,7 @@ typedef struct snake_food {
 SNAKE_FOOD snake_food;
 SNAKE game_snake;
 
-screen_buffer init_buffer(screen_buffer buffer);
-
-void write_to_buffer(screen_buffer buffer, int x, int y, char val);
-
 int draw_snake(screen_buffer buffer, SNAKE snake, int dt);
-
-void clean_buffer(screen_buffer buffer);
 
 void add_snake_body_part();
 
@@ -220,18 +160,14 @@ void print_snake_coordinates(SNAKE snake) {
     part = part->next;
     i++;
   }
-  printf("number of snake parts: %d\n", i);
 }
 
 int draw_snake(screen_buffer buffer, SNAKE snake, int dt) {
   snake_body_part *part = snake.head;
   int i = 0;
-  // printf("coordinates before move: \n");
-  // print_snake_coordinates(snake);
   printf("score: %d\n", score);
   int temp;
   int **node_coordinate = (int **)malloc(sizeof(int *) * snake.length);
-  // printf("allocated elments of n. %d\n", snake.length);
   for (int j = 0; j < snake.length; j++) {
     if (part == NULL) {
       break;
@@ -242,10 +178,6 @@ int draw_snake(screen_buffer buffer, SNAKE snake, int dt) {
     part = part->next;
   }
 
-  // printf("stored coordinates\n");
-  // for (int j = 0; j < snake.length; j++)
-  // printf("(%d;%d;%d) ", j, node_coordinate[j][0], node_coordinate[j][1]);
-  // printf("\n");
   part = snake.head->next;
   for (int j = 0; j < snake.length; j++) {
     if (part == NULL) {
@@ -258,18 +190,12 @@ int draw_snake(screen_buffer buffer, SNAKE snake, int dt) {
     free(node_coordinate[j]);
   }
 
-  // printf("free memory\n");
-
-  // printf("free element n. %d\n", snake.length);
   free(node_coordinate);
 
-  // printf("done moving coordinates\n");
   snake.head->x = snake.head->x + snake.head->vx;
   snake.head->y = snake.head->y + snake.head->vy;
   int val = check_collision(buffer);
 
-  // printf("coordnates after move\n");
-  // print_snake_coordinates(snake);
   part = snake.head;
 
   while (part != NULL) {
