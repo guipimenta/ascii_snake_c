@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#define ASCII_LIB_KEY_HANDLER
-#include "ascii_lib.h"
+#include <unistd.h>
 int rand_number(int min, int max) { return (rand() % max) + min; }
 
 long FRAMES = 0;
@@ -31,6 +30,16 @@ typedef struct snake_food {
 
 SNAKE_FOOD snake_food;
 SNAKE game_snake;
+typedef struct screen_buffer screen_buffer;
+void populate_snake_food(screen_buffer buffer);
+int draw_snake(screen_buffer buffer, SNAKE snake, int dt);
+
+#define ASCII_LIB_KEY_HANDLER
+#define GAME_RENDERING_FN                                                      \
+  res = draw_snake(buffer, game_snake, dt);                                    \
+  populate_snake_food(buffer);
+
+#include "ascii_lib.h"
 
 int draw_snake(screen_buffer buffer, SNAKE snake, int dt);
 
@@ -73,65 +82,6 @@ int check_collision(screen_buffer buffer) {
   return 0;
 }
 
-void draw_map(screen_buffer buffer) {
-  for (int i = 0; i < buffer.height; i++) {
-    for (int j = 0; j < buffer.width; j++) {
-      if (i == 0 || i == buffer.height - 1) {
-        write_to_buffer(buffer, j, i, '=');
-      } else {
-        if (j == 0 || j == buffer.width - 1) {
-          write_to_buffer(buffer, j, i, '|');
-        }
-      }
-    }
-  }
-}
-
-int render(int dt, screen_buffer buffer) {
-  printf("\033[2J");
-
-  clean_buffer(buffer);
-
-  draw_map(buffer);
-  int res = draw_snake(buffer, game_snake, dt);
-  populate_snake_food(buffer);
-
-  for (int i = 0; i < buffer.height; i++) {
-    for (int j = 0; j < buffer.width; j++) {
-      printf("%c", buffer.buffer[i][j]);
-    }
-    printf("\n");
-  }
-  printf("\n");
-
-  return res;
-}
-
-void clean_buffer(screen_buffer buffer) {
-  for (int i = 0; i < buffer.height; i++) {
-    for (int j = 0; j < buffer.width; j++) {
-      buffer.buffer[i][j] = ' ';
-    }
-  }
-}
-
-screen_buffer init_buffer(screen_buffer buffer) {
-  buffer.buffer = (char **)malloc(buffer.height * sizeof(char *));
-  for (int j = 0; j < buffer.height; j++) {
-    buffer.buffer[j] = (char *)malloc(sizeof(char) * buffer.width);
-  }
-
-  clean_buffer(buffer);
-  return buffer;
-}
-
-void free_buffer(screen_buffer buffer) {
-  for (int i = 0; i < buffer.height; i++) {
-    free(buffer.buffer[i]);
-  }
-  free(buffer.buffer);
-}
-
 void free_snake_game(SNAKE snake) {
   snake_body_part *part = snake.head;
   while (part != NULL) {
@@ -140,16 +90,6 @@ void free_snake_game(SNAKE snake) {
     part = next;
   }
   printf("All snake body part free\n");
-}
-
-void write_to_buffer(screen_buffer buffer, int x, int y, char val) {
-  if (x >= buffer.width || y >= buffer.height) {
-    return;
-  }
-  if (x < 0 || y < 0) {
-    return;
-  }
-  buffer.buffer[y][x] = val;
 }
 
 void print_snake_coordinates(SNAKE snake) {
@@ -224,7 +164,7 @@ void shutdown(screen_buffer buffer) {
   free_snake_game(game_snake);
 }
 
-int main() {
+int restart_game() {
   int i = 0;
   screen_buffer buffer;
   buffer.width = 100;
@@ -293,13 +233,26 @@ int main() {
     int render_result = render(i++, buffer);
     if (render_result == -1) {
       shutdown(buffer);
-      printf("game over\n");
-      printf("shutdown complete\n");
-      exit(0);
-      break;
       return 0;
     }
     usleep(100000);
   }
+}
+
+int main() {
+  while (1) {
+    restart_game();
+
+    disable_raw_mode();
+    printf("game over\n");
+    printf("Restart? (y/n)");
+
+    char restart;
+    scanf("%c", &restart);
+    if (restart == 'y') {
+      return 1;
+    }
+    return 0;
+  };
   return 0;
 }

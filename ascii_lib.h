@@ -54,6 +54,12 @@ int read_key() {
 
 #endif
 
+#ifdef DEBUG
+
+#endif
+
+#include <stdio.h>
+#include <stdlib.h>
 /*
  * Data Structures Definition
  * */
@@ -65,12 +71,94 @@ typedef struct screen_buffer {
 } screen_buffer;
 
 /*
- * functions declaration
+ * functions declaration - low level declarions
  */
 
 screen_buffer init_buffer(screen_buffer buffer);
 void write_to_buffer(screen_buffer buffer, int x, int y, char val);
 void clean_buffer(screen_buffer buffer);
 void free_buffer(screen_buffer buffer);
-screen_buffer init_buffer(screen_buffer buffer);
+
+/*
+ * Function implementation
+ **/
+
+screen_buffer init_buffer(screen_buffer buffer) {
+  buffer.buffer = (char **)malloc(buffer.height * sizeof(char *));
+  for (int j = 0; j < buffer.height; j++) {
+    buffer.buffer[j] = (char *)malloc(sizeof(char) * buffer.width);
+  }
+
+  clean_buffer(buffer);
+  return buffer;
+}
+
+void write_to_buffer(screen_buffer buffer, int x, int y, char val) {
+  if (x >= buffer.width || y >= buffer.height) {
+    return;
+  }
+  if (x < 0 || y < 0) {
+    return;
+  }
+  buffer.buffer[y][x] = val;
+}
+
+void clean_buffer(screen_buffer buffer) {
+  for (int i = 0; i < buffer.height; i++) {
+    for (int j = 0; j < buffer.width; j++) {
+      buffer.buffer[i][j] = ' ';
+    }
+  }
+}
+
+void free_buffer(screen_buffer buffer) {
+  for (int i = 0; i < buffer.height; i++) {
+    free(buffer.buffer[i]);
+  }
+  free(buffer.buffer);
+}
+
+/*
+ * game-related functions
+ */
+
+void draw_map(screen_buffer buffer);
+int render(int dt, screen_buffer buffer);
+
+void draw_map(screen_buffer buffer) {
+  for (int i = 0; i < buffer.height; i++) {
+    for (int j = 0; j < buffer.width; j++) {
+      if (i == 0 || i == buffer.height - 1) {
+        write_to_buffer(buffer, j, i, '=');
+      } else {
+        if (j == 0 || j == buffer.width - 1) {
+          write_to_buffer(buffer, j, i, '|');
+        }
+      }
+    }
+  }
+}
+
+int render(int dt, screen_buffer buffer) {
+  printf("\033[2J");
+
+  clean_buffer(buffer);
+
+  draw_map(buffer);
+  int res = 0;
+#ifdef GAME_RENDERING_FN
+  GAME_RENDERING_FN
+#endif
+
+  for (int i = 0; i < buffer.height; i++) {
+    for (int j = 0; j < buffer.width; j++) {
+      printf("%c", buffer.buffer[i][j]);
+    }
+    printf("\n");
+  }
+  printf("\n");
+
+  return res;
+}
+
 #endif
