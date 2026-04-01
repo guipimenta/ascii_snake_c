@@ -249,10 +249,9 @@ int main() {
 
     char restart;
     scanf("%c", &restart);
-    if (restart == 'y') {
-      return 1;
+    if (restart != 'y') {
+      return 0;
     }
-    return 0;
   };
   return 0;
 }

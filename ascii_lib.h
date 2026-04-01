@@ -8,7 +8,11 @@
 
 struct termios orig_termios;
 
-void disable_raw_mode() { tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios); }
+void disable_raw_mode() {
+  tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
+  int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+  fcntl(STDIN_FILENO, F_SETFL, flags & ~O_NONBLOCK);
+}
 
 void enable_raw_mode() {
   tcgetattr(STDIN_FILENO, &orig_termios);
