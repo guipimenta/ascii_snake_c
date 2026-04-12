@@ -73,6 +73,8 @@ int read_key() {
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
 /*
  * Data Structures Definition
  * */
@@ -88,6 +90,7 @@ typedef struct screen_buffer {
  */
 
 screen_buffer init_buffer(screen_buffer buffer);
+screen_buffer init_buffer_from_terminal();
 void write_to_buffer(screen_buffer buffer, int x, int y, char val);
 void clean_buffer(screen_buffer buffer);
 void free_buffer(screen_buffer buffer);
@@ -118,6 +121,16 @@ screen_buffer init_buffer(screen_buffer buffer) {
 
   clean_buffer(buffer);
   return buffer;
+}
+
+screen_buffer init_buffer_from_terminal() {
+  struct winsize ws;
+  ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws);
+  screen_buffer buffer;
+  buffer.width  = ws.ws_col;
+  buffer.height = ws.ws_row - 1;
+  DBG("terminal %dx%d", buffer.width, buffer.height);
+  return init_buffer(buffer);
 }
 
 void write_to_buffer(screen_buffer buffer, int x, int y, char val) {
@@ -170,7 +183,7 @@ void draw_map(screen_buffer buffer) {
 
 int render(int dt, screen_buffer buffer) {
   DBG("frame=%d", dt);
-  printf("\033[2J");
+  printf("\033[H\033[2J");
 
   clean_buffer(buffer);
 
@@ -188,7 +201,6 @@ int render(int dt, screen_buffer buffer) {
     }
     printf("\n");
   }
-  printf("\n");
 
   return res;
 }

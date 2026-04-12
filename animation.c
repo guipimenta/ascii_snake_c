@@ -167,13 +167,7 @@ void shutdown(screen_buffer buffer) {
 int restart_game() {
   srand(time(NULL));
   int i = 0;
-  screen_buffer buffer;
-  buffer.width = 100;
-  buffer.height = 50;
-  printf("initializing bufffer\n");
-  buffer = init_buffer(buffer);
-  printf("Buffer initialized with widith: %d and height: %d\n", buffer.width,
-         buffer.height);
+  screen_buffer buffer = init_buffer_from_terminal();
 
   game_snake.head = (snake_body_part *)malloc(sizeof(snake_body_part));
   game_snake.head->x = buffer.width / 2;
