@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <unistd.h>
 int rand_number(int min, int max) { return (rand() % max) + min; }
-
 long FRAMES = 0;
 int score = 0;
 
@@ -63,7 +63,7 @@ int check_collision(screen_buffer buffer) {
     score++;
     add_snake_body_part();
   }
-  printf("p1 (%d;%d)\n", game_snake.head->x, game_snake.head->y);
+  DBG("p1 (%d;%d)", game_snake.head->x, game_snake.head->y);
   if (game_snake.head->y <= 0 || game_snake.head->y >= buffer.height - 1 ||
       game_snake.head->x <= 0 || game_snake.head->x >= buffer.width - 1) {
     printf("out of board, game over\n");
@@ -165,6 +165,7 @@ void shutdown(screen_buffer buffer) {
 }
 
 int restart_game() {
+  srand(time(NULL));
   int i = 0;
   screen_buffer buffer;
   buffer.width = 100;

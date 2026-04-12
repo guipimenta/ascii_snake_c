@@ -1,6 +1,23 @@
 #ifndef ASCII_LIB
 #define ASCII_LIB
 
+#ifdef DEBUG
+#include <stdio.h>
+#include <string.h>
+#define DEBUG_MAX_LINES 10
+#define DEBUG_LINE_LEN  48
+static char _debug_lines[DEBUG_MAX_LINES][DEBUG_LINE_LEN];
+static int  _debug_line_count = 0;
+
+#define DBG(fmt, ...) do { \
+  if (_debug_line_count < DEBUG_MAX_LINES) { \
+    snprintf(_debug_lines[_debug_line_count++], DEBUG_LINE_LEN, fmt, ##__VA_ARGS__); \
+  } \
+} while (0)
+#else
+#define DBG(fmt, ...) ((void)0)
+#endif
+
 #ifdef ASCII_LIB_KEY_HANDLER
 #include <fcntl.h>
 #include <termios.h>
@@ -42,23 +59,15 @@ int read_key() {
     if (read(STDIN_FILENO, &seq[1], 1) == 0)
       return '\033';
     if (seq[0] == '[') {
-      if (seq[1] == 'A')
-        return KEY_UP;
-      if (seq[1] == 'B')
-        return KEY_DOWN;
-      if (seq[1] == 'C')
-        return KEY_RIGHT;
-      if (seq[1] == 'D')
-        return KEY_LEFT;
+      if (seq[1] == 'A') { DBG("key=UP"); return KEY_UP; }
+      if (seq[1] == 'B') { DBG("key=DOWN"); return KEY_DOWN; }
+      if (seq[1] == 'C') { DBG("key=RIGHT"); return KEY_RIGHT; }
+      if (seq[1] == 'D') { DBG("key=LEFT"); return KEY_LEFT; }
     }
     return '\033';
   }
   return c;
 }
-
-#endif
-
-#ifdef DEBUG
 
 #endif
 
@@ -83,6 +92,20 @@ void write_to_buffer(screen_buffer buffer, int x, int y, char val);
 void clean_buffer(screen_buffer buffer);
 void free_buffer(screen_buffer buffer);
 
+#ifdef DEBUG
+static void _flush_debug(screen_buffer buffer) {
+  for (int l = 0; l < _debug_line_count; l++) {
+    int len = (int)strlen(_debug_lines[l]);
+    int x   = buffer.width - len - 1;
+    for (int c = 0; c < len; c++)
+      write_to_buffer(buffer, x + c, l, _debug_lines[l][c]);
+  }
+  _debug_line_count = 0;
+}
+#else
+static inline void _flush_debug(screen_buffer buffer) { (void)buffer; }
+#endif
+
 /*
  * Function implementation
  **/
@@ -99,9 +122,11 @@ screen_buffer init_buffer(screen_buffer buffer) {
 
 void write_to_buffer(screen_buffer buffer, int x, int y, char val) {
   if (x >= buffer.width || y >= buffer.height) {
+    DBG("OOB write (%d;%d) val=%c", x, y, val);
     return;
   }
   if (x < 0 || y < 0) {
+    DBG("OOB write (%d;%d) val=%c", x, y, val);
     return;
   }
   buffer.buffer[y][x] = val;
@@ -144,6 +169,7 @@ void draw_map(screen_buffer buffer) {
 }
 
 int render(int dt, screen_buffer buffer) {
+  DBG("frame=%d", dt);
   printf("\033[2J");
 
   clean_buffer(buffer);
@@ -153,6 +179,8 @@ int render(int dt, screen_buffer buffer) {
 #ifdef GAME_RENDERING_FN
   GAME_RENDERING_FN
 #endif
+
+  _flush_debug(buffer);
 
   for (int i = 0; i < buffer.height; i++) {
     for (int j = 0; j < buffer.width; j++) {

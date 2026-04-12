@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A terminal-based snake animation game written in C — single source file, no external dependencies.
+A terminal-based snake animation game written in C — single source file, no external dependencies. ascii_lib.h contains all the logic for ascii drawing, including screen buffer handling, timer, keyboard input handling.
 
 ## Build & Run
 
@@ -16,7 +16,7 @@ gcc -g animation.c -o animation
 ./animation
 ```
 
-Controls: `W`/`A`/`S`/`D` to change direction, `Q` to quit.
+Controls: `KEY_UP`/`KEY_DOWN`/`KEY_LEFT`/`KEY_RIGHT` to change direction, `Q` to quit.
 
 ## Architecture
 
